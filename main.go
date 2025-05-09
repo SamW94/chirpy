@@ -43,22 +43,23 @@ func (acfg *apiConfig) resetHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	const serverPort = "8080"
 	mux := http.NewServeMux()
-	server := &http.Server{
-		Addr:    ":" + serverPort,
-		Handler: mux,
-	}
 	apiCfg := apiConfig{
 		fileserverHits: atomic.Int32{},
 	}
 
 	mux.Handle("/", http.FileServer(http.Dir(".")))
-	mux.HandleFunc("/healthz", healthzHandler)
-	mux.HandleFunc("/metrics", apiCfg.metricsHandler)
-	mux.HandleFunc("/reset", apiCfg.resetHandler)
+	mux.HandleFunc("GET /healthz", healthzHandler)
+	mux.HandleFunc("GET /metrics", apiCfg.metricsHandler)
+	mux.HandleFunc("POST /reset", apiCfg.resetHandler)
 
 	appPathHandler := http.StripPrefix("/app", http.FileServer(http.Dir(".")))
 	mux.Handle("/app", apiCfg.middlewareFileServerHits(appPathHandler))
 	mux.Handle("/app/", apiCfg.middlewareFileServerHits(appPathHandler))
+
+	server := &http.Server{
+		Addr:    ":" + serverPort,
+		Handler: mux,
+	}
 
 	log.Printf("Serving on port: %s", serverPort)
 	err := server.ListenAndServe()
