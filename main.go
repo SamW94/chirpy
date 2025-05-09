@@ -1,11 +1,44 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
-
-	"github.com/SamW94/chirpy/internal/http_handlers"
+	"sync/atomic"
 )
+
+type apiConfig struct {
+	fileserverHits atomic.Int32
+}
+
+func (acfg *apiConfig) middlewareFileServerHits(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Incrementing counter for: %s", r.URL.Path)
+		acfg.fileserverHits.Add(1)
+		next.ServeHTTP(w, r)
+	})
+}
+
+func healthzHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(200)
+	w.Write([]byte("OK"))
+}
+
+func (acfg *apiConfig) metricsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(200)
+	hitsCount := acfg.fileserverHits.Load()
+	w.Write([]byte(fmt.Sprintf("Hits: %v", hitsCount)))
+}
+
+func (acfg *apiConfig) resetHandler(w http.ResponseWriter, r *http.Request) {
+	acfg.fileserverHits.Store(0)
+	log.Printf("Reset hits counter to 0.")
+	w.Header().Add("Content-Type", "text/plan; charset=utf-8")
+	w.WriteHeader(200)
+	w.Write([]byte("Reset hits counter!"))
+}
 
 func main() {
 	const serverPort = "8080"
@@ -14,10 +47,18 @@ func main() {
 		Addr:    ":" + serverPort,
 		Handler: mux,
 	}
+	apiCfg := apiConfig{
+		fileserverHits: atomic.Int32{},
+	}
 
 	mux.Handle("/", http.FileServer(http.Dir(".")))
-	mux.HandleFunc("/healthz", http_handlers.HealthzHandler)
-	mux.Handle("/app/", http.StripPrefix("/app", http.FileServer(http.Dir("."))))
+	mux.HandleFunc("/healthz", healthzHandler)
+	mux.HandleFunc("/metrics", apiCfg.metricsHandler)
+	mux.HandleFunc("/reset", apiCfg.resetHandler)
+
+	appPathHandler := http.StripPrefix("/app", http.FileServer(http.Dir(".")))
+	mux.Handle("/app", apiCfg.middlewareFileServerHits(appPathHandler))
+	mux.Handle("/app/", apiCfg.middlewareFileServerHits(appPathHandler))
 
 	log.Printf("Serving on port: %s", serverPort)
 	err := server.ListenAndServe()
