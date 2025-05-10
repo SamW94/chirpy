@@ -47,13 +47,11 @@ func main() {
 		fileserverHits: atomic.Int32{},
 	}
 
-	mux.Handle("/", http.FileServer(http.Dir(".")))
 	mux.HandleFunc("GET /healthz", healthzHandler)
 	mux.HandleFunc("GET /metrics", apiCfg.metricsHandler)
 	mux.HandleFunc("POST /reset", apiCfg.resetHandler)
 
 	appPathHandler := http.StripPrefix("/app", http.FileServer(http.Dir(".")))
-	mux.Handle("/app", apiCfg.middlewareFileServerHits(appPathHandler))
 	mux.Handle("/app/", apiCfg.middlewareFileServerHits(appPathHandler))
 
 	server := &http.Server{
