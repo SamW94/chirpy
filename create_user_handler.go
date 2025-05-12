@@ -31,17 +31,20 @@ func (acfg *apiConfig) createUserHandler(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		log.Printf("Error decoding request body to requestJSON: %v", err)
 		respondWithError(w, 500, "Something went wrong.")
+		return
 	}
 
 	dbQueries := acfg.DatabaseQueries
 	if requestJson.Password == "" {
 		log.Printf("No password provided in request body.")
 		respondWithError(w, 500, "No password provided in request body.")
+		return
 	} else {
 		hashedPassword, err := auth.HashPassword(requestJson.Password)
 		if err != nil {
 			log.Printf("Error hashing password: %v", err)
 			respondWithError(w, 500, "Something went wrong.")
+			return
 		}
 
 		createUserParams := database.CreateUserParams{
@@ -53,6 +56,7 @@ func (acfg *apiConfig) createUserHandler(w http.ResponseWriter, r *http.Request)
 		if err != nil {
 			log.Printf("Error calling database.CreateUser() function: %v", err)
 			respondWithError(w, 500, "Something went wrong.")
+			return
 		}
 
 		log.Printf("Successfully created user with ID %v and email %v", dbUser.ID, dbUser.Email)

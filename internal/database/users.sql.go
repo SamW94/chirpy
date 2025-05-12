@@ -50,3 +50,21 @@ func (q *Queries) ResetUsers(ctx context.Context) (User, error) {
 	)
 	return i, err
 }
+
+const retrieveUserByEmail = `-- name: RetrieveUserByEmail :one
+SELECT id, created_at, updated_at, email, hashed_password from users
+WHERE email = $1
+`
+
+func (q *Queries) RetrieveUserByEmail(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRowContext(ctx, retrieveUserByEmail, email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Email,
+		&i.HashedPassword,
+	)
+	return i, err
+}
