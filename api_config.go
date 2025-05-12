@@ -4,10 +4,13 @@ import (
 	"log"
 	"net/http"
 	"sync/atomic"
+
+	"github.com/SamW94/chirpy/internal/database"
 )
 
 type apiConfig struct {
-	fileserverHits atomic.Int32
+	fileserverHits  atomic.Int32
+	DatabaseQueries *database.Queries
 }
 
 func (acfg *apiConfig) middlewareFileServerHits(next http.Handler) http.Handler {
