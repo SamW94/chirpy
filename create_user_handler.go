@@ -7,10 +7,13 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/SamW94/chirpy/internal/auth"
+	"github.com/SamW94/chirpy/internal/database"
 	"github.com/google/uuid"
 )
 
 type requestJSONCreateUser struct {
+	Password      string `json:"password"`
 	RequestedUser string `json:"email"`
 }
 
@@ -27,23 +30,39 @@ func (acfg *apiConfig) createUserHandler(w http.ResponseWriter, r *http.Request)
 	err := decoder.Decode(&requestJson)
 	if err != nil {
 		log.Printf("Error decoding request body to requestJSON: %v", err)
-		respondWithError(w, 500, "Something went wrong")
+		respondWithError(w, 500, "Something went wrong.")
 	}
 
 	dbQueries := acfg.DatabaseQueries
-	dbUser, err := dbQueries.CreateUser(context.Background(), requestJson.RequestedUser)
-	if err != nil {
-		log.Printf("Error calling database.CreateUser() function: %v", err)
+	if requestJson.Password == "" {
+		log.Printf("No password provided in request body.")
+		respondWithError(w, 500, "No password provided in request body.")
+	} else {
+		hashedPassword, err := auth.HashPassword(requestJson.Password)
+		if err != nil {
+			log.Printf("Error hashing password: %v", err)
+			respondWithError(w, 500, "Something went wrong.")
+		}
+
+		createUserParams := database.CreateUserParams{
+			Email:          requestJson.RequestedUser,
+			HashedPassword: hashedPassword,
+		}
+
+		dbUser, err := dbQueries.CreateUser(context.Background(), createUserParams)
+		if err != nil {
+			log.Printf("Error calling database.CreateUser() function: %v", err)
+			respondWithError(w, 500, "Something went wrong.")
+		}
+
+		log.Printf("Successfully created user with ID %v and email %v", dbUser.ID, dbUser.Email)
+		respBody := CreateUserResponseSuccessful{
+			ID:        dbUser.ID,
+			CreatedAt: dbUser.CreatedAt,
+			UpdatedAt: dbUser.UpdatedAt,
+			Email:     dbUser.Email,
+		}
+
+		respondWithJSON(w, 201, respBody)
 	}
-
-	log.Printf("Successfully created user with ID %v and email %v", dbUser.ID, dbUser.Email)
-	respBody := CreateUserResponseSuccessful{
-		ID:        dbUser.ID,
-		CreatedAt: dbUser.CreatedAt,
-		UpdatedAt: dbUser.UpdatedAt,
-		Email:     dbUser.Email,
-	}
-
-	respondWithJSON(w, 201, respBody)
-
 }
