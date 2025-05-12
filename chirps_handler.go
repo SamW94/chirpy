@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -80,4 +81,31 @@ func (acfg *apiConfig) getAllChirpsHandler(w http.ResponseWriter, r *http.Reques
 
 	log.Printf("Responding with HTTP 200 and array of all chirps (oldest first) after successful creation of response body...")
 	respondWithJSON(w, 200, respBody)
+}
+
+func (acfg *apiConfig) getChirpByIDHandler(w http.ResponseWriter, r *http.Request) {
+	chirpID, err := uuid.Parse(r.PathValue("chirp_id"))
+	log.Printf("Retrieving chirp with ID: %v", chirpID)
+	if err != nil {
+		log.Printf("Error converting string in URL to UUID type for DB lookup: %v", err)
+		respondWithError(w, 500, "Something went wrong")
+		return
+	}
+
+	chirp, err := acfg.DatabaseQueries.RetrieveChirpByID(r.Context(), chirpID)
+	if err != nil {
+		log.Printf("Error retrieving chirp by ID from database: %v", err)
+		respondWithError(w, 404, fmt.Sprintf("Chirp with ID %v not found", chirpID))
+	} else {
+		log.Printf("Successfully retrieved chirp with ID %v from database", chirp.ID)
+		respBody := successfulResponseParams{
+			ID:        chirp.ID,
+			CreatedAt: chirp.CreatedAt,
+			UpdatedAt: chirp.UpdatedAt,
+			Body:      chirp.Body,
+			UserID:    chirp.UserID,
+		}
+
+		respondWithJSON(w, 200, respBody)
+	}
 }
