@@ -36,6 +36,7 @@ func (acfg *apiConfig) createUserHandler(w http.ResponseWriter, r *http.Request)
 		log.Printf("Error calling database.CreateUser() function: %v", err)
 	}
 
+	log.Printf("Successfully created user with ID %v and email %v", dbUser.ID, dbUser.Email)
 	respBody := CreateUserResponseSuccessful{
 		ID:        dbUser.ID,
 		CreatedAt: dbUser.CreatedAt,
