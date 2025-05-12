@@ -24,7 +24,7 @@ type successfulResponseParams struct {
 	UserID    uuid.UUID `json:"user_id"`
 }
 
-func (acfg *apiConfig) chirpsHandler(w http.ResponseWriter, r *http.Request) {
+func (acfg *apiConfig) createChirpHandler(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	requestJson := requestJSONChirp{}
 	err := decoder.Decode(&requestJson)
@@ -58,4 +58,26 @@ func (acfg *apiConfig) chirpsHandler(w http.ResponseWriter, r *http.Request) {
 
 		respondWithJSON(w, 201, respBody)
 	}
+}
+
+func (acfg *apiConfig) getAllChirpsHandler(w http.ResponseWriter, r *http.Request) {
+	respBody := []successfulResponseParams{}
+	chirps, err := acfg.DatabaseQueries.RetrieveAllChirps(context.Background())
+	if err != nil {
+		log.Printf("Error retrieving chirps from the database: %v", err)
+	}
+
+	for _, chirp := range chirps {
+		arrayItem := successfulResponseParams{
+			ID:        chirp.ID,
+			CreatedAt: chirp.CreatedAt,
+			UpdatedAt: chirp.UpdatedAt,
+			Body:      chirp.Body,
+			UserID:    chirp.UserID,
+		}
+		respBody = append(respBody, arrayItem)
+	}
+
+	log.Printf("Responding with HTTP 200 and array of all chirps (oldest first) after successful creation of response body...")
+	respondWithJSON(w, 200, respBody)
 }
