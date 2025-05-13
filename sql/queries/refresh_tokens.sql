@@ -10,3 +10,9 @@ WHERE token = $1;
 -- name: GetUserFromRefreshToken :one
 SELECT user_id FROM refresh_tokens
 WHERE token = $1;
+
+-- name: UpdateRefreshTokenRevoke :one
+UPDATE refresh_tokens
+SET updated_at = NOW(), revoked_at = NOW()
+WHERE token = $1
+RETURNING *;

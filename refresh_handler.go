@@ -24,7 +24,7 @@ func (acfg *apiConfig) refreshHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if time.Now().After(refreshTokenStruct.ExpiresAt) {
+	if time.Now().After(refreshTokenStruct.ExpiresAt) || refreshTokenStruct.RevokedAt.Valid {
 		log.Printf("Refresh token expired at %v - token is no longer valid", refreshTokenStruct.ExpiresAt)
 		respondWithError(w, 401, "Invalid refresh token.")
 		return
