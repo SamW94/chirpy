@@ -14,9 +14,7 @@ import (
 
 func main() {
 	godotenv.Load()
-	dbURL := os.Getenv("DB_URL")
-	platform := os.Getenv("PLATFORM")
-	db, err := sql.Open("postgres", dbURL)
+	db, err := sql.Open("postgres", os.Getenv("DB_URL"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -27,7 +25,8 @@ func main() {
 	apiCfg := apiConfig{
 		fileserverHits:  atomic.Int32{},
 		DatabaseQueries: dbQueries,
-		Platform:        platform,
+		Platform:        os.Getenv("PLATFORM"),
+		JWTSecret:       os.Getenv("JWT_SECRET"),
 	}
 
 	mux.HandleFunc("GET /api/healthz", healthzHandler)

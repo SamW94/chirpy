@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/SamW94/chirpy/internal/auth"
 	"github.com/SamW94/chirpy/internal/database"
 	"github.com/google/uuid"
 )
@@ -32,6 +33,21 @@ func (acfg *apiConfig) createChirpHandler(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		log.Printf("Error decoding request body to requestJSON: %v", err)
 		respondWithError(w, 500, "Something went wrong")
+		return
+	}
+
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		log.Printf("Error getting Bearer token from HTTP request headers: %v", err)
+		respondWithError(w, 500, "Something went wrong")
+		return
+	}
+
+	jwtUUID, err := auth.ValidateJWT(token, acfg.JWTSecret)
+	if err != nil {
+		log.Printf("Error while validating JWT: %v", err)
+		respondWithError(w, 401, "Invalid JWT")
+		return
 	}
 
 	if len(requestJson.RequestedChirp) > 140 {
@@ -40,7 +56,7 @@ func (acfg *apiConfig) createChirpHandler(w http.ResponseWriter, r *http.Request
 	} else {
 		createChirpParams := database.CreateChirpParams{
 			Body:   badWordsRemoved(requestJson),
-			UserID: requestJson.UserID,
+			UserID: jwtUUID,
 		}
 
 		chirp, err := acfg.DatabaseQueries.CreateChirp(context.Background(), createChirpParams)

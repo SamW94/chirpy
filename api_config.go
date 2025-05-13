@@ -12,6 +12,7 @@ type apiConfig struct {
 	fileserverHits  atomic.Int32
 	DatabaseQueries *database.Queries
 	Platform        string
+	JWTSecret       string
 }
 
 func (acfg *apiConfig) middlewareFileServerHits(next http.Handler) http.Handler {
