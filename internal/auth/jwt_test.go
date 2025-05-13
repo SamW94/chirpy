@@ -12,9 +12,8 @@ import (
 func TestMakeAndValidateJWT_Success(t *testing.T) {
 	secret := "test_secret"
 	userID := uuid.New()
-	expiration := 1 * time.Hour
 
-	token, err := MakeJWT(userID, secret, expiration)
+	token, err := MakeJWT(userID, secret)
 	if err != nil {
 		t.Fatalf("MakeJWT failed: %v", err)
 	}
@@ -32,9 +31,8 @@ func TestMakeAndValidateJWT_Success(t *testing.T) {
 func TestValidateJWT_ExpiredToken(t *testing.T) {
 	secret := "test_secret"
 	userID := uuid.New()
-	expiration := -1 * time.Second
 
-	token, err := MakeJWT(userID, secret, expiration)
+	token, err := MakeJWT(userID, secret)
 	if err != nil {
 		t.Fatalf("MakeJWT failed: %v", err)
 	}
@@ -49,9 +47,8 @@ func TestValidateJWT_InvalidSignature(t *testing.T) {
 	secret := "test_secret"
 	wrongSecret := "wrong_secret"
 	userID := uuid.New()
-	expiration := 1 * time.Hour
 
-	token, err := MakeJWT(userID, secret, expiration)
+	token, err := MakeJWT(userID, secret)
 	if err != nil {
 		t.Fatalf("MakeJWT failed: %v", err)
 	}

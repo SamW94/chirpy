@@ -50,7 +50,7 @@ func (acfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	JWToken, err := auth.MakeJWT(user.ID, acfg.JWTSecret, time.Second*3600)
+	JWToken, err := auth.MakeJWT(user.ID, acfg.JWTSecret)
 	if err != nil {
 		log.Printf("Error creating JWT for user ID %s: %v", user.ID, err)
 		respondWithError(w, 500, "Something went wrong.")
