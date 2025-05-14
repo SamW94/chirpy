@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/SamW94/chirpy/internal/auth"
 	"github.com/google/uuid"
 )
 
@@ -28,6 +29,19 @@ func (acfg *apiConfig) polkaWebHookHandler(w http.ResponseWriter, r *http.Reques
 
 	if requestJson.Event != "user.upgraded" {
 		respondWithJSON(w, 204, nil)
+		return
+	}
+
+	key, err := auth.GetAPIKey(r.Header)
+	if err != nil {
+		log.Printf("Error getting API key from HTTP request headers: %v", err)
+		respondWithError(w, 500, "Something went wrong")
+		return
+	}
+
+	if key != acfg.PolkaKey {
+		log.Printf("API key in request does not match the Polka API key required")
+		respondWithError(w, 401, "Unauthorized")
 		return
 	}
 
