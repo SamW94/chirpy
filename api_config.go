@@ -13,6 +13,7 @@ type apiConfig struct {
 	DatabaseQueries *database.Queries
 	Platform        string
 	JWTSecret       string
+	PolkaKey        string
 }
 
 func (acfg *apiConfig) middlewareFileServerHits(next http.Handler) http.Handler {

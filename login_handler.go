@@ -24,6 +24,7 @@ type LoginSuccessfulResponse struct {
 	Email        string    `json:"email"`
 	JWT          string    `json:"token"`
 	RefreshToken string    `json:"refresh_token"`
+	IsChirpyRed  bool      `json:"is_chirpy_red"`
 }
 
 func (acfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
@@ -81,6 +82,7 @@ func (acfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 		Email:        user.Email,
 		JWT:          JWToken,
 		RefreshToken: refreshTokenStruct.Token,
+		IsChirpyRed:  user.IsChirpyRed,
 	}
 
 	respondWithJSON(w, 200, respBody)
