@@ -77,26 +77,32 @@ func (acfg *apiConfig) createChirpHandler(w http.ResponseWriter, r *http.Request
 	}
 }
 
-func (acfg *apiConfig) getAllChirpsHandler(w http.ResponseWriter, r *http.Request) {
-	respBody := []successfulResponseParams{}
+func (acfg *apiConfig) getChirpsHandler(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Query().Get("author_id") != "" {
+		log.Printf("author_id query passed in URL, retrieving chirps for user with ID %v", r.URL.Query().Get("author_id"))
+		userID, err := uuid.Parse(r.URL.Query().Get("author_id"))
+		if err != nil {
+			log.Printf("Error parsing value of author_id as UUID from string: %v", err)
+			respondWithError(w, 500, "Something went wrong")
+			return
+		}
+
+		chirps, err := acfg.DatabaseQueries.RetrieveChirpsByUserID(context.Background(), userID)
+		if err != nil {
+			log.Printf("Error retrieving chirps from the database: %v", err)
+			respondWithError(w, 500, "Something went wrong")
+			return
+		}
+		respondWithChirps(w, chirps)
+		return
+	}
+
 	chirps, err := acfg.DatabaseQueries.RetrieveAllChirps(context.Background())
 	if err != nil {
 		log.Printf("Error retrieving chirps from the database: %v", err)
+		return
 	}
-
-	for _, chirp := range chirps {
-		arrayItem := successfulResponseParams{
-			ID:        chirp.ID,
-			CreatedAt: chirp.CreatedAt,
-			UpdatedAt: chirp.UpdatedAt,
-			Body:      chirp.Body,
-			UserID:    chirp.UserID,
-		}
-		respBody = append(respBody, arrayItem)
-	}
-
-	log.Printf("Responding with HTTP 200 and array of all chirps (oldest first) after successful creation of response body...")
-	respondWithJSON(w, 200, respBody)
+	respondWithChirps(w, chirps)
 }
 
 func (acfg *apiConfig) getChirpByIDHandler(w http.ResponseWriter, r *http.Request) {
@@ -124,4 +130,21 @@ func (acfg *apiConfig) getChirpByIDHandler(w http.ResponseWriter, r *http.Reques
 
 		respondWithJSON(w, 200, respBody)
 	}
+}
+
+func respondWithChirps(w http.ResponseWriter, chirps []database.Chirp) {
+	respBody := []successfulResponseParams{}
+	for _, chirp := range chirps {
+		arrayItem := successfulResponseParams{
+			ID:        chirp.ID,
+			CreatedAt: chirp.CreatedAt,
+			UpdatedAt: chirp.UpdatedAt,
+			Body:      chirp.Body,
+			UserID:    chirp.UserID,
+		}
+		respBody = append(respBody, arrayItem)
+	}
+
+	log.Printf("Responding with HTTP 200 and array of all chirps (oldest first) after successful creation of response body...")
+	respondWithJSON(w, 200, respBody)
 }
