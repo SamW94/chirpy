@@ -41,6 +41,7 @@ func main() {
 	mux.HandleFunc("DELETE /api/chirps/{chirp_id}", apiCfg.deleteChirpByIDHandler)
 	mux.HandleFunc("POST /api/refresh", apiCfg.refreshHandler)
 	mux.HandleFunc("POST /api/revoke", apiCfg.revokeHandler)
+	mux.HandleFunc("POST /api/polka/webhooks", apiCfg.polkaWebHookHandler)
 
 	appPathHandler := http.StripPrefix("/app", http.FileServer(http.Dir(".")))
 	mux.Handle("/app/", apiCfg.middlewareFileServerHits(appPathHandler))
