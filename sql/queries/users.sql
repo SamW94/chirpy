@@ -10,3 +10,9 @@ RETURNING *;
 -- name: RetrieveUserByEmail :one
 SELECT * from users
 WHERE email = $1;
+
+-- name: UpdateEmailAndPassword :one
+UPDATE users
+SET updated_at = NOW(), email = $1, hashed_password = $2
+WHERE id = $3
+RETURNING *;
