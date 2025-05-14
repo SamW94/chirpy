@@ -34,7 +34,6 @@ func (acfg *apiConfig) createUserHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	dbQueries := acfg.DatabaseQueries
 	if requestJson.Password == "" {
 		log.Printf("No password provided in request body.")
 		respondWithError(w, 500, "No password provided in request body.")
@@ -52,7 +51,7 @@ func (acfg *apiConfig) createUserHandler(w http.ResponseWriter, r *http.Request)
 			HashedPassword: hashedPassword,
 		}
 
-		dbUser, err := dbQueries.CreateUser(context.Background(), createUserParams)
+		dbUser, err := acfg.DatabaseQueries.CreateUser(context.Background(), createUserParams)
 		if err != nil {
 			log.Printf("Error calling database.CreateUser() function: %v", err)
 			respondWithError(w, 500, "Something went wrong.")
