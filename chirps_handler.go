@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sort"
 	"time"
 
 	"github.com/SamW94/chirpy/internal/auth"
@@ -93,7 +94,7 @@ func (acfg *apiConfig) getChirpsHandler(w http.ResponseWriter, r *http.Request) 
 			respondWithError(w, 500, "Something went wrong")
 			return
 		}
-		respondWithChirps(w, chirps)
+		respondWithChirps(w, r, chirps)
 		return
 	}
 
@@ -102,7 +103,7 @@ func (acfg *apiConfig) getChirpsHandler(w http.ResponseWriter, r *http.Request) 
 		log.Printf("Error retrieving chirps from the database: %v", err)
 		return
 	}
-	respondWithChirps(w, chirps)
+	respondWithChirps(w, r, chirps)
 }
 
 func (acfg *apiConfig) getChirpByIDHandler(w http.ResponseWriter, r *http.Request) {
@@ -132,8 +133,15 @@ func (acfg *apiConfig) getChirpByIDHandler(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func respondWithChirps(w http.ResponseWriter, chirps []database.Chirp) {
+func respondWithChirps(w http.ResponseWriter, r *http.Request, chirps []database.Chirp) {
 	respBody := []successfulResponseParams{}
+	if r.URL.Query().Get("sort") == "desc" {
+		log.Println("'sort' query parameter received in URL as 'desc', sorting chirps in descending order...")
+		sort.Slice(chirps, func(i, j int) bool { return chirps[i].CreatedAt.After(chirps[j].CreatedAt) })
+	} else {
+		log.Println("No 'sort' query parameter received in URL sorting chirps in ascending order by default...")
+	}
+
 	for _, chirp := range chirps {
 		arrayItem := successfulResponseParams{
 			ID:        chirp.ID,
@@ -145,6 +153,6 @@ func respondWithChirps(w http.ResponseWriter, chirps []database.Chirp) {
 		respBody = append(respBody, arrayItem)
 	}
 
-	log.Printf("Responding with HTTP 200 and array of all chirps (oldest first) after successful creation of response body...")
+	log.Printf("Responding with HTTP 200 and array of all chirps after successful creation of response body...")
 	respondWithJSON(w, 200, respBody)
 }
